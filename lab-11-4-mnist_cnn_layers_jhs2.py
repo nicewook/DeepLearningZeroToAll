@@ -49,6 +49,8 @@ class Model:
             #conv2 = tf.layers.conv2d(inputs=dropout1, filters=64, kernel_size=[3, 3],
             #                         padding="SAME", activation=tf.nn.relu)
             # https://www.tensorflow.org/api_docs/python/tf/nn/separable_conv2d
+            residualv2 = tf.layers.conv2d(inputs=dropout1, filters=64, kernel_size=[1, 1], strides=2,
+                                          padding='same', activation=tf.nn.relu)
 
             self.W2_depthwise_filter = tf.get_variable(shape=[3, 3, dropout1.get_shape().as_list()[3], 1],
                                                        initializer=tf.contrib.layers.xavier_initializer_conv2d(),
@@ -67,17 +69,20 @@ class Model:
             dropout2 = tf.layers.dropout(inputs=pool2,
                                          rate=0.7, training=self.training)
 
+            dropout2 = tf.concat(axis=3, values=[dropout2, residualv2])
+            print(dropout2)
+
             # Convolutional Layer #2 and Pooling Layer #2
             #conv3 = tf.layers.conv2d(inputs=dropout2, filters=128, kernel_size=[3, 3],
             #                         padding="same", activation=tf.nn.relu)
 
-            residualv3 = tf.layers.conv2d(inputs=dropout2, filters=128, kernel_size=[1, 1], strides=2,
+            residualv3 = tf.layers.conv2d(inputs=dropout2, filters=256, kernel_size=[1, 1], strides=2,
                                           padding='same', activation=tf.nn.relu)
 
             self.W3_depthwise_filter = tf.get_variable(shape=[3, 3, dropout2.get_shape().as_list()[3], 1],
                                                        initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                                                        name='W3_depthwise_weight')
-            self.W3_pointwise_weight = tf.get_variable(shape=[1, 1, dropout2.get_shape().as_list()[3] * 1, 128],
+            self.W3_pointwise_weight = tf.get_variable(shape=[1, 1, dropout2.get_shape().as_list()[3] * 1, 256],
                                                        initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                                                        name='W3_pointwise_weight')
             conv3 = tf.nn.separable_conv2d(input=dropout2,
@@ -94,7 +99,7 @@ class Model:
             print(dropout3)
 
             # Dense Layer with Relu
-            flat = tf.reshape(dropout3, [-1, 256 * 4 * 4])
+            flat = tf.reshape(dropout3, [-1, 512 * 4 * 4])
             dense4 = tf.layers.dense(inputs=flat,
                                      units=625, activation=tf.nn.relu)
             dropout4 = tf.layers.dropout(inputs=dense4,

@@ -71,6 +71,9 @@ class Model:
             #conv3 = tf.layers.conv2d(inputs=dropout2, filters=128, kernel_size=[3, 3],
             #                         padding="same", activation=tf.nn.relu)
 
+            residualv3 = tf.layers.conv2d(inputs=dropout2, filters=128, kernel_size=[1, 1], strides=2,
+                                          padding='same', activation=tf.nn.relu)
+
             self.W3_depthwise_filter = tf.get_variable(shape=[3, 3, dropout2.get_shape().as_list()[3], 1],
                                                        initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                                                        name='W3_depthwise_weight')
@@ -87,9 +90,11 @@ class Model:
                                             padding="same", strides=2)
             dropout3 = tf.layers.dropout(inputs=pool3,
                                          rate=0.7, training=self.training)
+            dropout3 = tf.concat(axis=3, values=[dropout3, residualv3])
+            print(dropout3)
 
             # Dense Layer with Relu
-            flat = tf.reshape(dropout3, [-1, 128 * 4 * 4])
+            flat = tf.reshape(dropout3, [-1, 256 * 4 * 4])
             dense4 = tf.layers.dense(inputs=flat,
                                      units=625, activation=tf.nn.relu)
             dropout4 = tf.layers.dropout(inputs=dense4,
